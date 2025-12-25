@@ -1,56 +1,42 @@
-# TVQA Dataset Utilities
+# LongTVQA Dataset Files
 
-This repository provides the original TVQA JSONL QA files alongside helper scripts
-for converting them into a LongTVQA-style JSON schema.
+This repository contains the LongTVQA dataset exports as JSON-formatted files.
+Despite the `.jsonl` suffix, the QA splits are stored as a JSON array, and the
+subtitle files are JSON objects.
 
 ## Data files
 
-- `tvqa_train.jsonl` — training split (122,039 QAs)
-- `tvqa_val.jsonl` — validation split (15,253 QAs)
-- `tvqa_test_public.jsonl` — test-public split (7,623 QAs, no labels)
-- `tvqa_subtitles.json` — clip-level subtitle text indexed by `vid_name`
+- `LongTVQA_train.jsonl` — training split QA list.
+- `LongTVQA_val.jsonl` — validation split QA list.
+- `LongTVQA_subtitles_clip_level.jsonl` — clip-level subtitle text indexed by
+  `occur_clip` (e.g. `castle_s01e01_seg02_clip_00`).
+- `LongTVQA_subtitles_episode_level.jsonl` — episode-level subtitle text indexed by
+  `episode_name` (e.g. `castle_s01e01`).
 
-Each JSONL line is a QA item with keys such as `qid`, `q`, `a0`-`a4`, `answer_idx` (train/val
-only), `ts` (string range), `vid_name`, and `show_name`.
+## Subtitle file examples
 
-## Scripts
+Clip-level subtitles map clip ids to a single subtitle string:
 
-### `scripts/convert_tvqa_qa.py`
-
-Converts a TVQA JSONL file into a LongTVQA-style QA JSON list.
-
-- Converts `ts` from a string range to a `[start, end]` float list.
-- Maps `answer_idx` into `answer` (`"a0"`-`"a4"`).
-- Adds `episode_name` and `occur_clip` fields based on `vid_name`.
-- Keeps `show_name` for reference.
-
-Example:
-
-```bash
-python scripts/convert_tvqa_qa.py \
-  --input tvqa_train.jsonl \
-  --output outputs/LongTVQA_train.json
+```json
+"castle_s01e01_seg02_clip_00": "(Kath...)"
 ```
 
-If you want to keep show prefixes inside `episode_name` (e.g. `friends_s01e01`),
-add `--episode-with-show-prefix`.
+Episode-level subtitles map episode ids to a string that concatenates clips with
+segment markers:
 
-### `scripts/build_tvqa_subtitles.py`
-
-Generates clip-level and episode-level subtitle JSON files.
-
-- Clip-level output is a normalized copy of the input JSON.
-- Episode-level output concatenates clips in order and inserts clip markers
-  like `<seg01_clip_00>`.
-
-Example:
-
-```bash
-python scripts/build_tvqa_subtitles.py \
-  --input tvqa_subtitles.json \
-  --output-clip outputs/LongTVQA_subtitle_clip_level.json \
-  --output-episode outputs/LongTVQA_subtitle_episode_level.json
+```json
+"castle_s01e01": "<seg02_clip_00>xxx</seg02_clip_00>xxx"
 ```
 
-Use `--episode-with-show-prefix` to include show prefixes in `episode_name` keys
-when present.
+## QA item schema
+
+Each entry in the train/val arrays is a QA item with keys such as:
+
+- `qid`: integer question id.
+- `q`: question text.
+- `a0`-`a4`: answer options.
+- `answer`: correct option key (`"a0"`-`"a4"`).
+- `ts`: `[start, end]` float list of the temporal span.
+- `episode_name`: episode identifier (e.g. `grey_s03e20`).
+- `occur_clip`: clip identifier (e.g. `grey_s03e20_seg02_clip_14`).
+- `show_name`: show title.
